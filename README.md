@@ -1,6 +1,6 @@
 # SAGE
 
-Tín hiệu thu: y(t) \in \mathbb{R}^{12}
+Tín hiệu thu:Y(t) là IR_12
 
 ## Điều kiện thoát vòng lặp:
 - Tính điều kiện dừng
