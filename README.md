@@ -3,8 +3,8 @@
 Tín hiệu thu: y(t) \in \mathbb{R}^{12}
 
 ## Điều kiện thoát vòng lặp:
-- Đạt điều kiện dừng
-- Hiển thị bước E
+- Tính điều kiện dừng
+- Hiểu bước E
 - Sửa lại bước M
 
 ## Theta list:
