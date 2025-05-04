@@ -1,4 +1,4 @@
-load("pos.mat"); load("ketquaCoPhi.mat");
+load("pos.mat"); load("ketQuaKhoiTao"); load("IR_12.mat");
 %% Cài đặt hệ thống
 fc = 2e9;  % Tần số sóng mang 2 GHz
 c = 3e8;
@@ -12,15 +12,13 @@ md.beta = 0.6; %  Hệ số giảm tốc
 %antenna_pos =  [0 sqrt(sum( diff(pos_centers(:,11:20), 1, 2).^2, 1))];
 antenna_pos = pos_centers(:, 11:20);
 M = length(antenna_pos);
-
-%% Cài đặt RRC pulse
-p = generatePulse(md, A(i, 1), tau, 0);
-
 %% Tập giá trị quét
 T0 = 4.6414e-12;
 tau_grid = 0:T0:14999*T0; % Khoảng thời gian 0 đến 7e-8 giây
 phi_grid = -90:5:90; % nên để radian
 fd_grid = -500:50:500;  % Doppler ±500 Hz
+%% Cài đặt RRC pulse
+p = generatePulse(md, A(1, 1), tau_grid, 0).';
 
 %% Khởi tạo danh sách tham số cho 25 đường truyền 
 initializationZ = A(1:25, :);

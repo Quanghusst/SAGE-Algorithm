@@ -1,61 +1,40 @@
-%% M_Step Sage
-function [tau_opt, phi_opt, fd_opt, alpha_opt] = sage_mstep_grid(x_hat, ...
-    p, tau_grid, phi_grid, fd_grid, T0, antenna_pos, fc)
+function [tau_opt, phi_opt, fd_opt, alpha_opt] = sage_mstep_grid(...
+    x_hat, p, tau_grid, phi_grid, fd_grid, T0, antenna_pos, fc)
 
-% x_hat: tín hiệu đã trừ sóng khác (E-step)
-% p: hàm shaping pulse (dạng vector)
-% tau_grid, phi_grid, fd_grid: các giá trị cần quét
-% T0: thời gian lấy mẫu
-% antenna_pos: vị trí phần tử anten (vector 1xM)
-% fc: tần số sóng mang
+  c      = 3e8;
+  lambda = c/fc;
+  [M, N] = size(x_hat);
+  t_vec  = (0:N-1) * T0;
 
-c = 3e8;                  % vận tốc ánh sáng
-lambda = c / fc;         % bước sóng
-[M, N] = size(x_hat);    % M: số anten, N: số mẫu
+  % kiểm tra kích thước p
+  assert(length(p) == N, 'length(p) phải = N.');
 
-% Chuẩn bị dạng tín hiệu mẫu
-t_vec = (0:N-1)*T0;
-
-max_z = -inf;
-tau_opt = 0; phi_opt = 0; fd_opt = 0;
-
-%% Grid search cho tau, phi, fd
-for tau = tau_grid
+  max_z = -inf;
+  for tau = tau_grid
+    % p là row, kết quả pulse cũng là row 1×N
+    pulse = interp1(t_vec, p, t_vec - tau, 'linear', 0);
     for phi = phi_grid
-        for fd = fd_grid
-            % Vector hướng anten a(phi)
-            phi_rad = deg2rad(phi);
-            steering = exp(-1j*2*pi/lambda * antenna_pos * sin(phi_rad)).';
-            
-            % Doppler compensation
-            doppler_term = exp(-1j*2*pi*fd * t_vec);
-            
-            % Pulse shift
-            pulse_shifted = interp1(t_vec, p, t_vec - tau, 'linear', 0);
-            
-            % Tín hiệu tổng hợp
-            s = (steering) * (pulse_shifted .* doppler_term);
-            
-            % Tính hàm z
-            z = abs(sum(sum(conj(s) .* x_hat)));
-
-            % Lưu tham số tối ưu nếu z lớn hơn
-            if z > max_z
-                max_z = z;
-                tau_opt = tau;
-                phi_opt = phi;
-                fd_opt = fd;
-            end
+      phase    = antenna_pos.' * [cos(phi); sin(phi)];      % M×1
+      steering = exp(1j*2*pi/lambda * phase);
+      for fd = fd_grid
+        doppler = exp(-1j*2*pi*fd * t_vec);                 % 1×N
+        s       = steering * (pulse .* doppler);           % M×N
+        z       = abs(sum(conj(s).*x_hat, 'all'));
+        if z > max_z
+          max_z   = z;
+          tau_opt = tau;
+          phi_opt = phi;
+          fd_opt  = fd;
         end
+      end
     end
-end
+  end
 
-%% Sau khi tìm được bộ (tau, phi, fd) tốt nhất → tính alpha
-phi_rad = deg2rad(phi_opt);
-steering = exp(-1j*2*pi/lambda * antenna_pos * sin(phi_rad)).';
-doppler_term = exp(-1j*2*pi*fd_opt * t_vec);
-pulse_shifted = interp1(t_vec, p, t_vec - tau_opt, 'linear', 0);
-s_opt = (steering) * (pulse_shifted .* doppler_term);
-alpha_opt = sum(sum(conj(s_opt) .* x_hat)) / sum(sum(abs(s_opt).^2));
-
+  % Tính alpha
+  phase_opt    = antenna_pos.' * [cos(phi_opt); sin(phi_opt)];
+  steering_opt = exp(1j*2*pi/lambda * phase_opt);
+  doppler_opt  = exp(-1j*2*pi*fd_opt * t_vec);
+  pulse_opt    = interp1(t_vec, p, t_vec - tau_opt, 'linear', 0);
+  s_opt        = steering_opt * (pulse_opt .* doppler_opt);
+  alpha_opt    = sum(conj(s_opt).*x_hat, 'all') / sum(abs(s_opt).^2, 'all');
 end
