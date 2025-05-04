@@ -1,32 +1,46 @@
-% Thông số cơ bản
-rolloff = 0.25;      % Hệ số roll-off của bộ lọc RRC
-span = 6;            % Độ dài xung (tính bằng số ký tự symbol)
-sps = 8;             % Số mẫu trên mỗi symbol (samples per symbol)
+%% Khởi tạo thông số
+fc = 2.4e9;               % Tần số sóng mang (Hz)
+c = 3e8;
+lambda = c / fc;
 
-% Tạo bộ lọc Root Raised Cosine
-rrcFilter = rcosdesign(rolloff, span, sps, 'sqrt');
+antenna_pos = [0 0.5 1.0] * lambda / 2;  % Mảng anten tuyến tính
+M = length(antenna_pos);                % Số phần tử anten
 
-% Hiển thị xung RRC
+Tsymbol = 1e-6;          % Thời gian 1 symbol (1 µs)
+sps = 108;               % Số mẫu trên mỗi symbol
+T0 = Tsymbol / sps;      % Thời gian lấy mẫu (s)
+span = 140;              % Số symbol mà xung trải dài
+
+%% Sinh xung RRC (Root Raised Cosine)
+beta = 0.25;  % Hệ số roll-off
+p = rcosdesign(beta, span, sps, 'sqrt');  % xung RRC
+N = length(p);                            % Tổng số mẫu của xung
+t_vec = (0:N-1) * T0;                     % Trục thời gian
+
+% Xem xung
 figure;
-t = (-span/2:1/sps:span/2);
-plot(t, rrcFilter, 'LineWidth',1.5);
-title('Xung Root Raised Cosine (RRC)');
-xlabel('Thời gian (symbol)');
+plot(t_vec * 1e6, p);
+xlabel('Thời gian (µs)');
 ylabel('Biên độ');
-grid on;
+title('Xung RRC với sps = 108, span = 140');
 
-% Giả lập truyền đi một chuỗi symbol ngẫu nhiên
-numSymbols = 100;
-data = randi([0 1], numSymbols, 1)*2 - 1; % Tạo chuỗi bit ngẫu nhiên {-1,1}
+%% Mã hóa dãy tín hiệu truyền
+numSymbols = 100;                % Số lượng symbol muốn truyền
+dataBits = randi([0 1], 1, numSymbols);  % Sinh dãy bit ngẫu nhiên
+symbols = 2*dataBits - 1;        % Điều chế BPSK
 
-% Tạo tín hiệu phát đi bằng cách lấy mẫu symbol theo RRC
-signal_tx = upfirdn(data, rrcFilter, sps);
+% Phát tín hiệu bằng cách nhân từng symbol với xung RRC
+tx_signal = upfirdn(symbols, p, sps);  % Tín hiệu đã được lọc
 
-% Trục thời gian cho tín hiệu phát
+% Nếu bạn cần chèn sóng mang:
+t = (0:length(tx_signal)-1)*T0;
+carrier = cos(2*pi*fc*t);
+tx_passband = tx_signal .* carrier;
+
+% Vẽ tín hiệu truyền
 figure;
-time_tx = (0:length(signal_tx)-1)/sps;
-plot(time_tx, signal_tx);
-title('Tín hiệu truyền đi qua bộ lọc RRC');
-xlabel('Thời gian (symbol)');
+plot(t(1:1000)*1e6, tx_signal(1:1000));
+xlabel('Thời gian (µs)');
 ylabel('Biên độ');
-grid on;
+title('Tín hiệu truyền baseband');
+
