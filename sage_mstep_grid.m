@@ -11,7 +11,6 @@ function [tau_opt, phi_opt, fd_opt, alpha_opt] = sage_mstep_grid(...
 
   max_z = -inf;
   for tau = tau_grid
-    % p là row, kết quả pulse cũng là row 1×N
     pulse = interp1(t_vec, p, t_vec - tau, 'linear', 0);
     for phi = phi_grid
       phase    = antenna_pos.' * [cos(phi); sin(phi)];      % M×1

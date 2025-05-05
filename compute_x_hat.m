@@ -1,6 +1,6 @@
 %% Bước E: loại bỏ ảnh hưởng các đường truyền khác
 function x_hat = compute_x_hat(r, l, theta_list, p, T0, antenna_pos, fc)
-% r: tín hiệu thu (NxM)
+% r: tín hiệu thu (MxN)
 % l: chỉ số đường truyền hiện tại cần xử lý
 % theta_list: danh sách tham số của tất cả đường truyền (struct array)
 %             mỗi phần tử gồm: .tau, .phi, .fd, .alpha
@@ -32,7 +32,7 @@ for j = 1:length(theta_list)
     steering = exp(1j*2*pi/lambda * (antenna_pos.' * omega ));   % (2×M)'*(2×1) → M×1
     
     % Doppler và shaping pulse
-    doppler_term = exp(-1j*2*pi*fd_j * t_vec);
+    doppler_term = exp(1j*2*pi*fd_j * t_vec);
     pulse_shifted = interp1(t_vec, p, t_vec - tau_j, 'linear', 0);%1 x N Dịch tín hiệu
     
     % Tín hiệu tái tạo
